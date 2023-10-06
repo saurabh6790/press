@@ -59,6 +59,8 @@
   "new_worker_allocation",
   "set_bench_memory_limits",
   "ram",
+  "column_break_whrf",
+  "enabled_security_overview",
   "standalone_section",
   "is_standalone",
   "column_break_edyf",
@@ -192,6 +194,7 @@
    "hidden": 1,
    "label": "Domain",
    "options": "Root Domain",
+   "search_index": 1,
    "set_only_once": 1
   },
   {
@@ -208,6 +211,7 @@
    "in_standard_filter": 1,
    "label": "Cluster",
    "options": "Cluster",
+   "search_index": 1,
    "set_only_once": 1
   },
   {
@@ -292,7 +296,8 @@
    "fieldtype": "Link",
    "label": "Virtual Machine",
    "mandatory_depends_on": "eval:doc.provider == \"AWS EC2\"",
-   "options": "Virtual Machine"
+   "options": "Virtual Machine",
+   "search_index": 1
   },
   {
    "default": "0",
@@ -430,6 +435,12 @@
    "fieldname": "set_bench_memory_limits",
    "fieldtype": "Check",
    "label": "Set Bench Memory Limits"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled_security_overview",
+   "fieldtype": "Check",
+   "label": "Enabled Security Overview"
   }
  ],
  "links": [],
