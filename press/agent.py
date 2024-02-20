@@ -692,8 +692,8 @@ class Agent:
 					headers=headers,
 					result=json_response or result.text,
 				)
-		except Exception as exce:
-			self.handle_exception(agent_job, exce)
+		except Exception as exc:
+			self.handle_exception(agent_job, exc)
 			log_error(
 				title="Agent Request Exception",
 				method=method,
@@ -753,6 +753,54 @@ class Agent:
 			}
 		).insert()
 		return job
+
+	def get_similar_in_execution_job(
+		self,
+		job_type,
+		path,
+		bench=None,
+		site=None,
+		code_server=None,
+		upstream=None,
+		host=None,
+		method="POST",
+	):
+		"""Deduplicate jobs in execution state"""
+
+		disable_agent_job_deduplication = frappe.db.get_single_value(
+			"Press Settings", "disable_agent_job_deduplication", cache=True
+		)
+
+		if disable_agent_job_deduplication:
+			return False
+
+		filteres = {
+			"server_type": self.server_type,
+			"server": self.server,
+			"job_type": job_type,
+			"status": ("not in", ("Success", "Failure", "Delivery Failure")),
+			"request_method": method,
+			"request_path": path,
+		}
+
+		if bench:
+			filteres["bench"] = bench
+
+		if site:
+			filteres["site"] = site
+
+		if code_server:
+			filteres["code_server"] = code_server
+
+		if upstream:
+			filteres["upstream"] = upstream
+
+		if host:
+			filteres["host"] = host
+
+		job = frappe.db.get_value("Agent Job", filteres, "name")
+
+		return frappe.get_doc("Agent Job", job) if job else False
 
 	def update_monitor_rules(self, rules, routes):
 		data = {"rules": rules, "routes": routes}
