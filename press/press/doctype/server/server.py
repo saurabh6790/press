@@ -209,6 +209,10 @@ class BaseServer(Document, TagHelpers):
 	def create_dns_record(self):
 		try:
 			domain = frappe.get_doc("Root Domain", self.domain)
+
+			if domain.generic:
+				return  # No need to create DNS records for generic domains
+
 			client = boto3.client(
 				"route53",
 				aws_access_key_id=domain.aws_access_key_id,
