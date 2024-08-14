@@ -26,11 +26,13 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: doc.dns_provider=='AWS Route 53'",
    "fieldname": "aws_access_key_id",
    "fieldtype": "Data",
    "label": "AWS Access Key ID"
   },
   {
+   "depends_on": "eval: doc.dns_provider=='AWS Route 53'",
    "fieldname": "aws_secret_access_key",
    "fieldtype": "Password",
    "label": "AWS Secret Access Key"
@@ -92,7 +94,7 @@
    "link_fieldname": "domain"
   }
  ],
- "modified": "2024-08-09 17:58:48.193519",
+ "modified": "2024-08-12 16:28:39.333589",
  "modified_by": "Administrator",
  "module": "Press",
  "name": "Root Domain",
