@@ -376,6 +376,7 @@ class DatabaseServer(BaseServer):
 					"certificate_private_key": config.certificate.private_key,
 					"certificate_full_chain": config.certificate.full_chain,
 					"certificate_intermediate_chain": config.certificate.intermediate_chain,
+					"certificate_file_mapper": config.certificate.tls_file_mapper,
 				},
 			)
 			play = ansible.run()
