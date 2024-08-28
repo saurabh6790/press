@@ -274,6 +274,11 @@ class ProxyServer(BaseServer):
 				{"status": "Active", "cluster": self.cluster},
 				as_list=True,
 			)[0][0]
+
+			if not default_hostgroup:
+				frappe.msgprint("No active database servers found")
+				return
+
 			ansible = Ansible(
 				playbook="proxysql.yml",
 				server=self,
@@ -486,6 +491,11 @@ class ProxyServer(BaseServer):
 				{"status": "Active", "cluster": self.cluster},
 				as_list=True,
 			)[0][0]
+
+			if not default_hostgroup:
+				frappe.msgprint("No active database servers found")
+				return
+
 			ansible = Ansible(
 				playbook="proxysql_monitor.yml",
 				server=self,
