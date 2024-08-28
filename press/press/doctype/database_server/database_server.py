@@ -36,6 +36,7 @@ class DatabaseServer(BaseServer):
 		auto_add_storage_max: DF.Int
 		auto_add_storage_min: DF.Int
 		cluster: DF.Link | None
+		data_dir: DF.Data | None
 		domain: DF.Link | None
 		frappe_public_key: DF.Code | None
 		frappe_user_password: DF.Password | None
@@ -352,6 +353,10 @@ class DatabaseServer(BaseServer):
 			else:
 				self.server_id = 1
 
+	@property
+	def datadir(self):
+		return self.data_dir or "/var/lib/mysql"
+
 	def _setup_server(self):
 		config = self._get_config()
 		try:
@@ -372,6 +377,7 @@ class DatabaseServer(BaseServer):
 					"kibana_password": config.kibana_password,
 					"private_ip": self.private_ip,
 					"server_id": self.server_id,
+					"data_dir": self.datadir,
 					"mariadb_root_password": config.mariadb_root_password,
 					"certificate_private_key": config.certificate.private_key,
 					"certificate_full_chain": config.certificate.full_chain,
