@@ -802,10 +802,11 @@ class Site(Document, TagHelpers):
 
 	def check_enough_space_on_server(self):
 		app: "Server" = frappe.get_doc("Server", self.server)
-		db: "DatabaseServer" = frappe.get_doc("Database Server", app.database_server)
-
 		self.check_and_increase_disk(app, self.space_required_on_app_server)
-		self.check_and_increase_disk(db, self.space_required_on_db_server)
+
+		if app.database_server:
+			db: "DatabaseServer" = frappe.get_doc("Database Server", app.database_server)
+			self.check_and_increase_disk(db, self.space_required_on_db_server)
 
 	def create_agent_request(self):
 		agent = Agent(self.server)
@@ -1576,7 +1577,7 @@ class Site(Document, TagHelpers):
 			create_site_analytics(self.name, analytics)
 
 	@dashboard_whitelist()
-	def is_setup_wizard_complete(self):
+	def is_setup_wizard_complete(self):  # noqa
 		if self.setup_wizard_complete:
 			return True
 
