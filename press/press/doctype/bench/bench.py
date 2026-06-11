@@ -327,10 +327,17 @@ class Bench(Document):
 		if press_settings_common_site_config:
 			config.update(json.loads(press_settings_common_site_config))
 
-		self.update_config_with_rg_config(config)
-
-		if not (server_private_ip := frappe.db.get_value("Server", self.server, "private_ip")):
+		server = frappe.db.get_value("Server", self.server, ["private_ip", "nats_port"], as_dict=True)
+		if not (server and server.private_ip):
 			frappe.throw("Server must have a private IP to create Bench")  # nosemgrep
+
+		server_private_ip = server.private_ip
+		nats_port = server.nats_port or 4222
+		# Sites reach the host NATS server directly over the docker bridge using the
+		# server's private IP (the bench container has no NATS listener on loopback).
+		config["nats_url"] = f"nats://{server_private_ip}:{nats_port}"
+
+		self.update_config_with_rg_config(config)
 
 		bench_config = {
 			"docker_image": self.docker_image,
@@ -351,6 +358,9 @@ class Bench(Document):
 			"gunicorn_threads_per_worker": self.gunicorn_threads_per_worker,
 			"is_code_server_enabled": self.is_code_server_enabled,
 			"use_rq_workerpool": self.use_rq_workerpool,
+			"nats_enabled": True,
+			"nats_port": nats_port,
+			"nats_host": server_private_ip,
 		}
 
 		self.update_bench_config_with_rq_port(bench_config)

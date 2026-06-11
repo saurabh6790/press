@@ -393,6 +393,34 @@ class TestBench(FrappeTestCase):
 		self.assertGreater(bench1.gunicorn_workers, 2)
 		self.assertGreater(bench2.gunicorn_workers, 2)
 
+	def test_bench_config_carries_nats_settings_from_server(self):
+		from press.press.doctype.server.test_server import create_test_server
+
+		server = create_test_server()
+		frappe.db.set_value("Server", server.name, "nats_port", 5222)
+
+		bench = create_test_bench(server=server.name)
+
+		bench_config = json.loads(bench.bench_config)
+		self.assertTrue(bench_config["nats_enabled"])
+		self.assertEqual(bench_config["nats_port"], 5222)
+		self.assertEqual(bench_config["nats_host"], server.private_ip)
+
+		# Endpoint propagates to every site on the bench via common site config.
+		config = json.loads(bench.config)
+		self.assertEqual(config["nats_url"], f"nats://{server.private_ip}:5222")
+
+	def test_bench_config_defaults_nats_port_when_unset_on_server(self):
+		from press.press.doctype.server.test_server import create_test_server
+
+		server = create_test_server()
+		frappe.db.set_value("Server", server.name, "nats_port", 0)
+
+		bench = create_test_bench(server=server.name)
+
+		self.assertEqual(json.loads(bench.bench_config)["nats_port"], 4222)
+		self.assertEqual(json.loads(bench.config)["nats_url"], f"nats://{server.private_ip}:4222")
+
 
 @patch("press.press.doctype.bench.bench.frappe.db.commit", new=MagicMock)
 @patch("press.press.doctype.server.server.frappe.db.commit", new=MagicMock)

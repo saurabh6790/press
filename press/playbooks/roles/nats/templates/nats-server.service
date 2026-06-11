@@ -1,0 +1,17 @@
+[Unit]
+Description=NATS Server
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/nats-server -c /etc/nats/nats-server.conf
+User=frappe
+Group=frappe
+
+SyslogIdentifier=nats-server
+Restart=always
+RestartSec=1
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target

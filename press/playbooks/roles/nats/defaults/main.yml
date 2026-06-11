@@ -1,0 +1,11 @@
+---
+nats_version: "2.10.22"
+nats_port: 4222
+
+# nsc trust chain (operator/account/user). The keystore is generated here at
+# install time and each bench container gets a copy (see the agent's setup_nats).
+nats_keystore_dir: /home/frappe/nats/keystore
+nats_config_dir: /home/frappe/nats/config
+nats_operator: FrappeCloud
+nats_account: POS
+nats_user: bench

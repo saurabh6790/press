@@ -57,6 +57,8 @@
 		"agent_password",
 		"column_break_pdbx",
 		"disable_agent_job_auto_retry",
+		"nats_section",
+		"nats_port",
 		"reverse_proxy_section",
 		"proxy_server",
 		"column_break_12",
@@ -507,6 +509,19 @@
 			"fieldname": "disable_agent_job_auto_retry",
 			"fieldtype": "Check",
 			"label": "Disable Agent Job Auto Retry"
+		},
+		{
+			"collapsible": 1,
+			"fieldname": "nats_section",
+			"fieldtype": "Section Break",
+			"label": "NATS"
+		},
+		{
+			"default": "4222",
+			"description": "Port the host NATS server listens on for POS <-> HQ messaging",
+			"fieldname": "nats_port",
+			"fieldtype": "Int",
+			"label": "NATS Port"
 		},
 		{
 			"default": "0",
