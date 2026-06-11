@@ -57,6 +57,11 @@
 		"agent_password",
 		"column_break_pdbx",
 		"disable_agent_job_auto_retry",
+		"nats_section",
+		"nats_port",
+		"column_break_nats",
+		"nats_creds",
+		"nats_seed",
 		"reverse_proxy_section",
 		"proxy_server",
 		"column_break_12",
@@ -507,6 +512,35 @@
 			"fieldname": "disable_agent_job_auto_retry",
 			"fieldtype": "Check",
 			"label": "Disable Agent Job Auto Retry"
+		},
+		{
+			"collapsible": 1,
+			"fieldname": "nats_section",
+			"fieldtype": "Section Break",
+			"label": "NATS"
+		},
+		{
+			"default": "4222",
+			"description": "Port the host NATS server listens on for POS <-> HQ messaging",
+			"fieldname": "nats_port",
+			"fieldtype": "Int",
+			"label": "NATS Port"
+		},
+		{
+			"fieldname": "column_break_nats",
+			"fieldtype": "Column Break"
+		},
+		{
+			"description": "Credentials file contents provisioned to the host and the bench container",
+			"fieldname": "nats_creds",
+			"fieldtype": "Password",
+			"label": "NATS Credentials"
+		},
+		{
+			"description": "Auth token / seed used by the host NATS server",
+			"fieldname": "nats_seed",
+			"fieldtype": "Password",
+			"label": "NATS Seed"
 		},
 		{
 			"default": "0",

@@ -9,10 +9,12 @@
     - role: essentials
     - role: user
     - role: nginx
+    - role: build_nginx_with_stream
     - role: agent
     - role: mount
     - role: bench
     - role: docker
+    - role: nats
     - role: node_exporter
     - role: cadvisor
     - role: statsd_exporter

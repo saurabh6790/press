@@ -2844,6 +2844,9 @@ class Server(BaseServer):
 		managed_database_service: DF.Link | None
 		mounts: DF.Table[ServerMount]
 		nat_server: DF.Link | None
+		nats_creds: DF.Password | None
+		nats_port: DF.Int
+		nats_seed: DF.Password | None
 		new_worker_allocation: DF.Check
 		plan: DF.Link | None
 		platform: DF.Literal["x86_64", "arm64"]
@@ -3265,6 +3268,9 @@ class Server(BaseServer):
 					"agent_repository_branch_or_commit_ref": self.get_agent_repository_branch(),
 					"agent_update_args": " --skip-repo-setup=true",
 					"nat_gateway_ip": self.get_nat_gateway_ip(),
+					"nats_port": self.nats_port or 4222,
+					"nats_creds": self.get_password("nats_creds", raise_exception=False),
+					"nats_seed": self.get_password("nats_seed", raise_exception=False),
 					**self.get_mount_variables(),
 				},
 			)

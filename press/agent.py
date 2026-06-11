@@ -55,6 +55,17 @@ class Agent:
 		self.__servers_using_alt_ports = servers_using_alternative_port_for_communication()
 		self.port = 443 if self.server not in self.__servers_using_alt_ports else 8443
 
+	def _get_nats_keys(self) -> dict:
+		# NATS credentials live (encrypted) on the Server doctype and are sent to the
+		# agent fresh on every call so they are never persisted into the shared docker
+		# image or the bench_config JSON. The agent writes them into the container.
+		server = frappe.get_doc(self.server_type, self.server)
+		creds = server.get_password("nats_creds", raise_exception=False)
+		seed = server.get_password("nats_seed", raise_exception=False)
+		if not (creds or seed):
+			return {}
+		return {"nats": {"creds": creds, "seed": seed}}
+
 	def new_bench(self, bench: "Bench"):
 		settings = frappe.db.get_value(
 			"Press Settings",
@@ -85,6 +96,8 @@ class Agent:
 				}
 				for m in bench.mounts
 			]
+
+		data.update(self._get_nats_keys())
 
 		return self.create_agent_job("New Bench", "benches", data, bench=bench.name)
 
@@ -121,6 +134,7 @@ class Agent:
 			"bench_config": json.loads(bench.bench_config),
 			"common_site_config": json.loads(bench.config),
 		}
+		data.update(self._get_nats_keys())
 		return self.create_agent_job(
 			"Update Bench Configuration", f"benches/{bench.name}/config", data, bench=bench.name
 		)

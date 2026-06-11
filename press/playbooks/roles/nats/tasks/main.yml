@@ -1,0 +1,67 @@
+---
+- name: Create NATS Configuration Directory
+  file:
+    path: /etc/nats
+    state: directory
+    owner: frappe
+    group: frappe
+    mode: 0750
+
+- name: Download NATS Server Binary (amd64)
+  unarchive:
+    src: "https://github.com/nats-io/nats-server/releases/download/v{{ nats_version }}/nats-server-v{{ nats_version }}-linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: yes
+    creates: "/tmp/nats-server-v{{ nats_version }}-linux-amd64"
+  when: ansible_architecture == "x86_64"
+
+- name: Download NATS Server Binary (arm64)
+  unarchive:
+    src: "https://github.com/nats-io/nats-server/releases/download/v{{ nats_version }}/nats-server-v{{ nats_version }}-linux-arm64.tar.gz"
+    dest: /tmp
+    remote_src: yes
+    creates: "/tmp/nats-server-v{{ nats_version }}-linux-arm64"
+  when: ansible_architecture == "aarch64"
+
+- name: Install NATS Server Binary
+  copy:
+    src: "/tmp/nats-server-v{{ nats_version }}-linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}/nats-server"
+    dest: /usr/local/bin/nats-server
+    remote_src: yes
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Write NATS Credentials File
+  copy:
+    content: "{{ nats_creds }}"
+    dest: /etc/nats/nats.creds
+    owner: frappe
+    group: frappe
+    mode: 0600
+  when: nats_creds | default('', true) | length > 0
+  no_log: true
+
+- name: Write NATS Server Configuration
+  template:
+    src: nats-server.conf
+    dest: /etc/nats/nats-server.conf
+    owner: frappe
+    group: frappe
+    mode: 0640
+  no_log: true
+
+- name: Create NATS Systemd Service File
+  template:
+    src: nats-server.service
+    dest: /etc/systemd/system/nats-server.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Start and Enable NATS Server Service
+  systemd:
+    daemon_reload: true
+    name: nats-server
+    enabled: yes
+    state: restarted
