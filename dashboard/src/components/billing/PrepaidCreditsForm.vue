@@ -3,7 +3,7 @@
 		<!-- Amount -->
 		<div>
 			<FormControl
-				:label="`Amount (Minimum Amount: ${minimumAmount})`"
+				label="Amount"
 				class="mb-3"
 				v-model.number="creditsToBuy"
 				name="amount"
@@ -16,11 +16,17 @@
 					</div>
 				</template>
 			</FormControl>
+			<p
+				class="-mt-1 mb-3 text-p-sm"
+				:class="isBelowMinimum ? 'text-ink-red-4' : 'text-ink-gray-6'"
+			>
+				{{ amountHint }}
+			</p>
 			<FormControl
 				v-if="team.doc.currency === 'INR'"
-				:label="`Total Amount + GST (${
+				:label="`Total you'll pay (incl. ${
 					team.doc?.billing_info.gst_percentage * 100
-				}%)`"
+				}% GST)`"
 				disabled
 				:modelValue="totalAmount"
 				name="total"
@@ -43,7 +49,9 @@
 				type="number"
 			>
 				<template #prefix>
-					<div class="-ml-1 grid w-4 place-items-center text-sm text-ink-gray-7">
+					<div
+						class="-ml-1 grid w-4 place-items-center text-sm text-ink-gray-7"
+					>
 						{{ 'Ksh' }}
 					</div>
 				</template>
@@ -127,18 +135,19 @@
 	</div>
 </template>
 <script setup>
-import BuyCreditsStripe from './BuyCreditsStripe.vue';
-import BuyCreditsRazorpay from './BuyCreditsRazorpay.vue';
-import RazorpayLogo from '../../logo/RazorpayLogo.vue';
-import PayPalLogo from '../../logo/PayPalLogo.vue';
-import StripeLogo from '../../logo/StripeLogo.vue';
-import BuyPrepaidCreditsMpesa from './mpesa/BuyPrepaidCreditsMpesa.vue';
-import { FormControl, Button, createResource } from 'frappe-ui';
-import { ref, computed, inject, watch, onMounted } from 'vue';
+import { Button, createResource, FormControl } from 'frappe-ui'
+import { computed, inject, onMounted, ref, watch } from 'vue'
+import PayPalLogo from '../../logo/PayPalLogo.vue'
+import RazorpayLogo from '../../logo/RazorpayLogo.vue'
+import StripeLogo from '../../logo/StripeLogo.vue'
+import { userCurrency } from '../../utils/format'
+import BuyCreditsRazorpay from './BuyCreditsRazorpay.vue'
+import BuyCreditsStripe from './BuyCreditsStripe.vue'
+import BuyPrepaidCreditsMpesa from './mpesa/BuyPrepaidCreditsMpesa.vue'
 
-const emit = defineEmits(['success']);
+const emit = defineEmits(['success'])
 
-const team = inject('team');
+const team = inject('team')
 const props = defineProps({
 	minimumAmount: {
 		type: Number,
@@ -152,100 +161,120 @@ const props = defineProps({
 		type: String,
 		default: null,
 	},
-});
+})
 
 const paypalEnabled = createResource({
 	url: 'press.api.billing.is_paypal_enabled',
 	cache: 'paypalEnabled',
 	auto: true,
-});
+})
 
 const totalUnpaidAmount = createResource({
 	url: 'press.api.billing.total_unpaid_amount',
 	cache: 'totalUnpaidAmount',
 	auto: true,
-});
+})
 
 const minimumAmount = computed(() => {
-	if (props.minimumAmount) return props.minimumAmount;
-	if (!team.doc) return 0;
-	let unpaidAmount = totalUnpaidAmount.data || 0;
-	const minimumDefault = team.doc?.currency == 'INR' ? 410 : 5;
+	if (props.minimumAmount) return props.minimumAmount
+	if (!team.doc) return 0
+	let unpaidAmount = totalUnpaidAmount.data || 0
+	const minimumDefault = team.doc?.currency == 'INR' ? 410 : 5
 
 	if (unpaidAmount > 100000 && team.doc?.currency == 'INR') {
-		unpaidAmount = 100000;
+		unpaidAmount = 100000
 	} else if (unpaidAmount > 1450 && team.doc?.currency == 'USD') {
-		unpaidAmount = 1450;
+		unpaidAmount = 1450
 	}
 
 	return Math.ceil(
 		unpaidAmount && unpaidAmount > 0 ? unpaidAmount : minimumDefault,
-	);
-});
+	)
+})
 
-const creditsToBuy = ref(minimumAmount.value);
-const paymentGateway = ref('');
+const creditsToBuy = ref(minimumAmount.value)
+const paymentGateway = ref('')
 
+// Round up like minimumAmount, so the prefilled value passes validation
 watch(totalUnpaidAmount, () => {
-	creditsToBuy.value =
-		totalUnpaidAmount.data > 0 ? totalUnpaidAmount.data : minimumAmount.value;
-});
+	creditsToBuy.value = Math.max(
+		Math.ceil(totalUnpaidAmount.data || 0),
+		minimumAmount.value,
+	)
+})
+
+const isBelowMinimum = computed(() => {
+	if ((creditsToBuy.value || 0) >= minimumAmount.value) return false
+	// Stripe lets partners pay below the minimum
+	return !(paymentGateway.value === 'Stripe' && team.doc.erpnext_partner)
+})
+
+// Explain where the minimum comes from, not just its value
+const amountHint = computed(() => {
+	const minimum = userCurrency(minimumAmount.value, 0)
+	const unpaid = totalUnpaidAmount.data || 0
+	if (props.minimumAmount || unpaid <= 0) return `Minimum amount is ${minimum}.`
+	const dues = `You have ${userCurrency(unpaid)} in outstanding dues.`
+	// minimumAmount is capped, so a large due is not cleared by the minimum
+	if (minimumAmount.value < unpaid) return `${dues} Add at least ${minimum}.`
+	return `${dues} Add at least ${minimum} to clear them.`
+})
 
 const totalAmount = computed(() => {
-	const _creditsToBuy = creditsToBuy.value || 0;
+	const _creditsToBuy = creditsToBuy.value || 0
 
 	if (team.doc?.currency === 'INR') {
 		return (
 			_creditsToBuy +
 			_creditsToBuy * (team.doc.billing_info.gst_percentage || 0)
-		).toFixed(2);
+		).toFixed(2)
 	} else {
-		return _creditsToBuy;
+		return _creditsToBuy
 	}
-});
+})
 
-const amountInKES = ref();
-const exchangeRate = ref(0);
+const amountInKES = ref()
+const exchangeRate = ref(0)
 
 watch(creditsToBuy, () => {
-	let _amountInKES = creditsToBuy.value * exchangeRate.value;
+	let _amountInKES = creditsToBuy.value * exchangeRate.value
 	if (
 		paymentGateway.value === 'M-Pesa' &&
 		_amountInKES !== creditsToBuy.value
 	) {
-		amountInKES.value = _amountInKES;
+		amountInKES.value = _amountInKES
 	}
-});
+})
 
 watch(amountInKES, () => {
-	let data = amountInKES.value / exchangeRate.value;
+	let data = amountInKES.value / exchangeRate.value
 	if (paymentGateway.value === 'M-Pesa' && data !== creditsToBuy.value) {
-		creditsToBuy.value = data;
+		creditsToBuy.value = data
 	}
-});
+})
 
 watch(paymentGateway, () => {
 	if (paymentGateway.value === 'M-Pesa') {
-		amountInKES.value = creditsToBuy.value * exchangeRate.value;
+		amountInKES.value = creditsToBuy.value * exchangeRate.value
 	}
-});
+})
 
 const fetchExchangeRate = async () => {
 	try {
-		const fromCurrency = 'usd';
-		const toCurrency = 'kes';
-		const baseURL = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies`;
-		const URL = `${baseURL}/${fromCurrency}.json`;
-		let response = await fetch(URL);
-		let responseJSON = await response.json();
-		let rate = responseJSON[fromCurrency][toCurrency];
-		exchangeRate.value = Math.round(rate);
+		const fromCurrency = 'usd'
+		const toCurrency = 'kes'
+		const baseURL = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies`
+		const URL = `${baseURL}/${fromCurrency}.json`
+		let response = await fetch(URL)
+		let responseJSON = await response.json()
+		let rate = responseJSON[fromCurrency][toCurrency]
+		exchangeRate.value = Math.round(rate)
 	} catch (error) {
-		console.error(error);
+		console.error(error)
 	}
-};
+}
 
 onMounted(() => {
-	fetchExchangeRate();
-});
+	fetchExchangeRate()
+})
 </script>
